@@ -1,0 +1,519 @@
+---
+title: Deliverable 8
+
+author:
+    - name: Shane Simes
+      email: simess@vcu.edu
+
+    - name: Cameron Clyde
+      email: clydecp@vcu.edu
+format:
+    html:
+        embed-resources: true
+        html-math-method: katex
+        theme: spacelab
+        toc: true
+
+---
+
+
+# Project Overview and Key Deliverables
+
+### Overview
+
+Our project focuses on developing a database for Magic: The Gathering (MTG) players to manage their growing card collections. The MTG database will provide users, especially new and casual players, with an easy way to organize their cards, build decks, and manage trades. By addressing the challenges of manual card organization, we aim to create a solution that improves the card management experience for all players.
+
+### Key Deliverables
+
+- Pitch Video URL: [Link to the Pitch Video](https://vcu.mediaspace.kaltura.com/media/Shane+Simes's+Zoom+Meeting/1_ks51h6jn)
+
+- Design Video URL: [Link to Design Video](https://vcu.mediaspace.kaltura.com/media/t/1_l2r6u7s6)
+
+- GitHub Repository URL: [Link to repository](https://github.com/cmsc-vcu/cmsc408-fa2024-proj-team-name/)
+
+---
+
+# Problem Description
+
+Magic: The Gathering (MTG) is a collectible card game with a vast card pool. Players collect cards from different sets released over the years, building decks and trading cards within the MTG community. Managing these collections manually can become overwhelming due to the large number of cards and frequent new releases. Our database aims to solve this issue by creating an organized system for tracking collections, building decks, and facilitating trades.
+
+### Need
+
+Players often struggle to manage their card collections, especially when they have thousands of cards. This problem is exacerbated when searching for specific cards to include in decks or when organizing cards for trading. A database is necessary to help players efficiently manage their collections and access the information they need when deck-building or trading. This system will replace the need for cumbersome spreadsheets or manual tracking, making the process smoother and more enjoyable.
+
+### Context, Scope, and Perspective
+
+This database is designed primarily for new and casual MTG players, but it can benefit experienced players as well. By organizing card collections and providing advanced search functionalities, it allows users to filter their cards based on criteria such as color, type, rarity, and mana cost. The database will also be useful for MTG traders who need to manage an inventory of tradable cards.
+
+### User Roles
+
+Our database only has a single role for the users. All users will be able to manage their collections, build decks, search for cards, trade, etc..
+
+
+### Security and Privacy:
+
+To protect user data, we will implement user authentication (e.g., email and password) to restrict access to personal collections. Access control will limit permissions for actions such as modifying other users’ collections. We will hash sensitive information like passwords to ensure security. 
+
+---
+
+# Database Design
+
+### Entity-Relationship Diagram:
+
+Our database consists of five main entities: Cards, Decks, Users, and Collections, Trades. The relationships between these entities are designed to provide an efficient and scalable solution for managing MTG card collections.
+
+**Crow's Foot Diagram**
+<details>
+  <summary>Click to expand chart</summary>
+
+```{mermaid}
+erDiagram
+
+    USERS {
+        int id PK
+        string email
+        string password_hash
+        string username
+    }
+
+    COLLECTION {
+        int id PK
+        int user_id FK
+        int card_id FK
+        int quantity
+    }
+
+
+    CARDS {
+        int id PK
+        string name
+        string mana_cost
+        string card_type
+        string rarity
+        string color
+        int power
+        int toughness
+        text rules_text
+        string artist
+    }
+
+    DECKS {
+        int id PK
+        string name
+        string description
+        datetime created_at
+        string format
+        int user_id FK
+    }
+
+    DECK_CARDS {
+        int id PK
+        int deck_id FK
+        int card_id FK
+        int quantity
+    }
+
+    TRADES {
+        int id PK
+        int user1_id FK
+        int user2_id FK
+        string status
+        datetime created_at
+        datetime completed_at
+    }
+
+    TRADE_CARDS {
+        int id PK
+        int trade_id FK
+        int card_id FK
+        int user_id FK
+        int quantity
+        string direction 
+    }
+
+    DECK_CARDS }o--|| CARDS : "included in"
+    DECKS ||--o{ DECK_CARDS : "contains"
+    CARDS }o--o{ COLLECTION : "collected in"
+    USERS ||--o{ COLLECTION : "has"
+    USERS ||--o{ DECKS : "owns"
+    USERS ||--o{ TRADES : "initiates/receives"
+    CARDS ||--o{ TRADE_CARDS : "traded in"
+    TRADES ||--o{ TRADE_CARDS : "contains"
+    USERS ||--o{ TRADE_CARDS : "trades"
+
+
+```
+
+
+</details>
+
+### Relational Schemas:
+
+**USERS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| email           | VARCHAR   | Valid email addresses    | UNIQUE, NOT NULL               |
+| password_hash   | VARCHAR   | String (hashed)          | NOT NULL                       |
+| username        | VARCHAR   | Unique usernames         | UNIQUE, NOT NULL               |
+
+</details>
+
+---
+
+**COLLECTION**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| user_id         | INT       | Positive integers        | FK REFERENCES USERS(id)        |
+| card_id         | INT       | Positive integers        | FK REFERENCES CARDS(id)        |
+| quantity        | INT       | Non-negative integers     | NOT NULL                       |
+
+</details>
+
+---
+
+**CARDS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| name            | VARCHAR   | Valid card names         | NOT NULL                       |
+| mana_cost       | VARCHAR   | Valid mana cost values   |                                |
+| card_type       | VARCHAR   | Types (e.g., Creature)   |                                |
+| rarity          | VARCHAR   | Types (e.g., Rare)       |                                |
+| set             | VARCHAR   | Valid set names          |                                |
+| color           | VARCHAR   | Color names (e.g., Red)  |                                |
+| power           | INT       | Non-negative integers     |                                |
+| toughness       | INT       | Non-negative integers     |                                |
+| rules_text      | TEXT      | Rules text for the card  |                                |
+
+</details>
+
+---
+
+**DECKS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| name            | VARCHAR   | Valid deck names         | NOT NULL                       |
+| created_at      | DATETIME  | Timestamp                | DEFAULT CURRENT_TIMESTAMP      |
+| format          | VARCHAR   | Format types (e.g., EDH) |                                |
+| user_id         | INT       | Positive integers        | FK REFERENCES USERS(id)        |
+
+</details>
+
+---
+
+**DECK_CARDS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| deck_id         | INT       | Positive integers        | FK REFERENCES DECKS(id)       |
+| card_id         | INT       | Positive integers        | FK REFERENCES CARDS(id)       |
+| quantity        | INT       | Non-negative integers     | NOT NULL                       |
+
+</details>
+
+---
+
+**TRADES**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| user1_id        | INT       | Positive integers        | FK REFERENCES USERS(id)        |
+| user2_id        | INT       | Positive integers        | FK REFERENCES USERS(id)        |
+| status          | VARCHAR   | Trade statuses (e.g., completed) | NOT NULL              |
+| created_at      | DATETIME  | Timestamp                | DEFAULT CURRENT_TIMESTAMP      |
+| completed_at    | DATETIME  | Timestamp                |                                |
+
+</details>
+
+---
+
+**TRADE_CARDS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| trade_id        | INT       | Positive integers        | FK REFERENCES TRADES(id)       |
+| card_id         | INT       | Positive integers        | FK REFERENCES CARDS(id)        |
+| user_id         | INT       | Positive integers        | FK REFERENCES USERS(id)        |
+| quantity        | INT       | Non-negative integers     | NOT NULL                       |
+| direction       | VARCHAR   | Direction types (e.g., give/take) | NOT NULL                  |
+
+</details>
+
+### Functional Dependencies and Normalization
+
+**Functional Dependencies:**
+
+- Users:
+: user_id $\rightarrow$ email, password_hash, username
+
+- Collection:
+: collection_id $\rightarrow$ user_id, card_id, quantity
+: (user_id, card_id) $\rightarrow$ quantity
+
+- Cards:
+: card_id $\rightarrow$ name, mana_cost, card_type, rarity, set, color, power, toughness, rules_text
+: name $\rightarrow$ mana_cost, card_type, rarity, set, color, power, toughness, rules_text
+
+- Decks:
+: deck_id $\rightarrow$ name, created_at, format, user_id
+: (user_id, name) $\rightarrow$ id, description, created_at, format
+
+- Deck_Cards:
+: id $\rightarrow$ deck_id, card_id, quantity
+: (deck_id, card_id) $\rightarrow$ quantity
+
+- Trades:
+: trade_id $\rightarrow$ user1_id, user2_id, status, created_at, completed_at
+: (user1_id, user2_id, created_at) $\rightarrow$ id, status, completed_at
+
+- Trade_Cards:
+: id $\rightarrow$ trade_id, card_id, user_id, quantity, direction
+: (trade_id, card_id, user_id) $\rightarrow$ quantity, direction
+
+**Normalization**
+
+Our database is in Boyce-Codd Normal Form (BCNF). This means the database has already eliminated partial and transitive dependencies, and all non-key attributes are dependent only on the primary key.
+
+### Sample Queries:
+
+Below are 20 sample queries our database can answer using relational algebra:
+
+<details>
+  <summary>Click to expand sample queries</summary>
+
+1. Retrieve all users.
+: $$ \pi_{id,email,username}(USERS) $$
+
+1. Get all cards in a specific collection.
+: $$ \pi_{card\_id,quantity}(COLLECTION ⋈_{user\_id} USERS) $$
+
+1. Get all decks owned by a user.
+: $$ \pi_{id,name}(DECKS ⋈_{user\_id} USERS) $$
+
+1. List all cards with a specific mana cost.
+: $$ \sigma_{mana\_cost}(CARDS) $$
+
+1. Find all cards by a specific artist.
+: $$ \sigma_{artist}(CARDS) $$
+
+1. Display the cards a user has from a specific set.
+: $$ \sigma_{set}(CARDS ⋈_{card\_id} COLLECTION ⋈_{user\_id} USERS) $$
+
+1. List all decks in a specific MTG format.
+: $$ \sigma_{format}(DECKS) $$
+
+1. List all cards in a user's collection.
+: $$ \pi_{card\_id}( COLLECTION ⋈_{user\_id} ​USERS ) $$
+
+1. List users that own a card in their collection that another user has in their collection.
+: $$ \pi_{username}(USERS ⋈_{user\_id} ​COLLECTION ⋈_{card\_id} COLLECTION ⋈_{user\_id} ​USERS) $$
+
+1. List a user's completed trade history (x is the user_id of desired user)
+: $$ \sigma_{status='completed'}(TRADES ⋈_{user1\_id='x' ∨ user2\_id='x'} ​USERS) $$
+
+1. Show all decks that include a specific card.
+: $$ \pi_{deck\_id}(DECK\_CARDS ⋈_{card\_id} CARDS) $$
+
+1. Find all cards in a user's collection with a specific artist
+: $$ \pi_{card\_id, artist}(CARDS ⋈_{card\_id} COLLECTION ⋈_{user\_id} USERS) $$
+
+1. List all users who have a card from a specific set.
+: $$ \pi_{username}(USERS ⋈_{user\_id} (COLLECTION ⋈_{card\_id} \sigma_{set}(CARDS) )) $$
+
+1. List all users who own decks.
+: $$ \pi_{username}(USERS ⋈_{user\_id} DECKS) $$
+
+1. Find history for users who have traded cards with each other.
+: $$ \pi_{user1_id,user2_id​}(TRADES) $$
+
+1. Find all users who have not traded any cards.
+: $$ \pi_{username}​(USERS)−\pi_{user1\_id}​(TRADES)−\pi_{user2\_id}​(TRADES) $$
+
+1. List all cards traded in a specific trade
+: $$ \pi_{card\_id}​(TRADE\_CARDS ⋈_{trade\_id} ​TRADES) $$
+
+1. Get all pending trades
+: $$ \sigma_{statis='pending'}(TRADES) $$
+
+1. Find all cards by a specific artist in a specific deck.
+: $$ \sigma_{artist}(CARDS ⋈_{card\_id} DECK\_CARDS ⋈_{deck\_id} DECKS) $$
+
+1. Get all cards that have been traded
+: $$ \pi_{card\_id}(TRADE\_CARDS) $$
+
+</details>
+
+### Sample Data
+
+**USERS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| id | email               | password_hash | username    | created_at          |
+|----|---------------------|---------------|-------------|----------------------|
+| 1  | user1@example.com   | hash1         | user_one    | 2024-01-01 12:00:00  |
+| 2  | user2@example.com   | hash2         | user_two    | 2024-01-02 12:00:00  |
+| 3  | user3@example.com   | hash3         | user_three  | 2024-01-03 12:00:00  |
+| 4  | user4@example.com   | hash4         | user_four   | 2024-01-04 12:00:00  |
+| 5  | user5@example.com   | hash5         | user_five   | 2024-01-05 12:00:00  |
+
+</details>
+
+**COLLECTION**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| id | user_id | card_id | quantity |
+|----|---------|---------|----------|
+| 1  | 1       | 1       | 3        |
+| 2  | 1       | 2       | 2        |
+| 3  | 2       | 3       | 5        |
+| 4  | 3       | 1       | 1        |
+| 5  | 4       | 4       | 4        |
+| 6  | 5       | 2       | 7        |
+
+</details>
+
+**CARDS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| id | name                | mana_cost | card_type | rarity   | set        | color      | power | toughness | rules_text                          |
+|----|---------------------|-----------|-----------|----------|------------|------------|-------|-----------|-------------------------------------|
+| 1  | Forest              | 0         | Land      | Common   | Alpha      | Green      | 0     | 0         | Add {G} to your mana pool.         |
+| 2  | Lightning Bolt      | {R}       | Instant    | Uncommon | Alpha      | Red        | -     | -         | Deal 3 damage to any target.       |
+| 3  | Black Lotus         | 0         | Artifact  | Rare     | Alpha      | Colorless  | -     | -         | Sacrifice Black Lotus: Add three mana of any one color. |
+| 4  | Shivan Dragon       | {4}{R}{R} | Creature  | Mythic   | Alpha      | Red        | 5     | 5         | Flying.  Whenever Shivan Dragon attacks, it deals 1 damage to any target. |
+| 5  | Counterspell        | {U}{U}    | Instant    | Uncommon | Alpha      | Blue       | -     | -         | Counter target spell.               |
+
+</details>
+
+**DECKS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| id | name                | created_at          | format       | user_id |
+|----|---------------------|----------------------|--------------|---------|
+| 1  | Aggro Deck          | 2024-02-01 12:00:00  | Standard     | 1       |
+| 2  | Control Deck        | 2024-02-02 12:00:00  | Modern       | 2       |
+| 3  | Combo Deck          | 2024-02-03 12:00:00  | Legacy       | 3       |
+| 4  | Casual Deck         | 2024-02-04 12:00:00  | Commander    | 4       |
+| 5  | Themed Deck         | 2024-02-05 12:00:00  | Vintage      | 5       |
+
+</details>
+
+**DECK_CARDS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| id | deck_id | card_id | quantity |
+|----|---------|---------|----------|
+| 1  | 1       | 1       | 4        |
+| 2  | 1       | 2       | 2        |
+| 3  | 2       | 3       | 1        |
+| 4  | 3       | 4       | 2        |
+| 5  | 4       | 1       | 3        |
+| 6  | 5       | 2       | 4        |
+
+</details>
+
+**WISHLIST**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| id | user_id | card_id |
+|----|---------|---------|
+| 1  | 1       | 3       |
+| 2  | 2       | 4       |
+| 3  | 3       | 2       |
+| 4  | 4       | 1       |
+| 5  | 5       | 5       |
+
+</details>
+
+**TRADES**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| id | user1_id | user2_id | status    | created_at          | completed_at |
+|----|-----------|-----------|-----------|----------------------|---------------|
+| 1  | 1         | 2         | pending    | 2024-03-01 12:00:00  | NULL          |
+| 2  | 3         | 4         | accepted    | 2024-03-02 12:00:00  | NULL          |
+| 3  | 2         | 5         | rejected    | 2024-03-03 12:00:00  | NULL          |
+| 4  | 1         | 3         | completed   | 2024-03-04 12:00:00  | 2024-03-05 12:00:00 |
+| 5  | 4         | 5         | pending    | 2024-03-06 12:00:00  | NULL          |
+
+</details>
+
+**TRADE_CARDS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| id | trade_id | card_id | user_id | quantity | direction   |
+|----|----------|---------|---------|----------|--------------|
+| 1  | 1        | 1       | 1       | 2        | offered      |
+| 2  | 1        | 3       | 2       | 1        | requested    |
+| 3  | 2        | 2       | 3       | 1        | offered      |
+| 4  | 2        | 4       | 4       | 1        | requested    |
+| 5  | 4        | 3       | 1       | 1        | offered      |
+| 6  | 4        | 5       | 3       | 1        | requested    |
+| 7  | 5        | 1       | 4       | 3        | offered      |
+| 8  | 5        | 2       | 5       | 2        | requested    |
+
+</details>
+
+---
+
+# Project Management
+
+```{mermaid}
+
+gantt
+    title Project Milestones
+    dateFormat YYYY-MM-DD
+    section Milestones
+        Create website skeleton             : active,       t1, 2024-10-13, 14d
+        Create database                     :               t2, after t1, 14d
+        Create CRUD interface               :               t3, after t2, 14d
+        Wrap up phase 2                     :               t4, after t3, 2024-12-12
+
+```

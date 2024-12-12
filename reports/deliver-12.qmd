@@ -1,0 +1,419 @@
+---
+title: Deliverable 12
+
+author:
+    - name: Shane Simes
+      email: simess@vcu.edu
+
+    - name: Cameron Clyde
+      email: clydecp@vcu.edu
+format:
+    html:
+        embed-resources: true
+        html-math-method: katex
+        theme: spacelab
+        toc: true
+
+---
+
+
+# Project Overview and Key Deliverables
+
+### Overview
+
+Our project focuses on developing a database for Magic: The Gathering (MTG) players to manage their growing card collections. The MTG database will provide users, especially new and casual players, with an easy way to organize their cards, build decks, and manage trades. By addressing the challenges of manual card organization, we aim to create a solution that improves the card management experience for all players.
+
+### Key Deliverables
+
+- Pitch Video URL: [Link to the Pitch Video](https://vcu.mediaspace.kaltura.com/media/Shane+Simes's+Zoom+Meeting/1_ks51h6jn)
+
+- Design Video URL: [Link to Design Video](https://vcu.mediaspace.kaltura.com/media/t/1_l2r6u7s6)
+
+- Final Video URL: [Link to Design Video](https://vcu.mediaspace.kaltura.com/media/t/1_l2r6u7s6)
+
+- GitHub Repository URL: [Link to repository](https://github.com/cmsc-vcu/cmsc408-fa2024-proj-team-name/)
+
+---
+
+# Problem Description
+
+Magic: The Gathering (MTG) is a collectible card game with a vast card pool. Players collect cards from different sets released over the years, building decks and trading cards within the MTG community. Managing these collections manually can become overwhelming due to the large number of cards and frequent new releases. Our database aims to solve this issue by providing:
+
+* Organized card management: Players can catalog their collections with advanced filtering by card attributes.
+
+* Deck-building assistance: Tools to build and manage decks efficiently.
+
+* Trading facilitation: A system to track trades with other players.
+
+---
+
+# Database Implementation
+
+### Changes from Deliverable 8
+
+* Database Design Refinements: Adjusted the relationships to improve normalization. For instance, we replaced the color, power, and toughness fields in the CARDS table with set_name, art_variation, and image_url fields to better integrate with the Magic: The Gathering API.
+
+* Enhanced User Security: Implemented hashed password storage and secure user authentication.
+
+* New Features:
+
+  * Introduced TRADE_CARDS table for improved trade details.
+
+  * Integrated the Magic: The Gathering API for live card data.
+
+**Crow's Foot Diagram**
+<details>
+  <summary>Click to expand chart</summary>
+
+```{mermaid}
+erDiagram
+
+    USERS {
+        int id PK
+        string email
+        string password_hash
+        string username
+    }
+
+    COLLECTION {
+        int id PK
+        int user_id FK
+        int card_id FK
+        int quantity
+    }
+
+
+    CARDS {
+        int id PK
+        string name
+        string mana_cost
+        string card_type
+        string rarity
+        string set_name
+        text rules_text
+        text art_variation
+        string image_url
+    }
+
+    DECKS {
+        int id PK
+        string name
+        datetime created_at
+        string format
+        int user_id FK
+        int commander_card_id FK
+    }
+
+    DECK_CARDS {
+        int id PK
+        int deck_id FK
+        int card_id FK
+        int quantity
+    }
+
+    TRADES {
+        int id PK
+        int user1_id FK
+        int user2_id FK
+        string status
+        datetime created_at
+        datetime completed_at
+    }
+
+    TRADE_CARDS {
+        int id PK
+        int trade_id FK
+        int card_id FK
+        int user_id FK
+        int quantity
+        string direction 
+    }
+
+    USERS ||--o{ COLLECTION : "has"
+    USERS ||--o{ DECKS : "owns"
+    CARDS ||--o{ COLLECTION : "collected in"
+    CARDS ||--o{ TRADE_CARDS : "traded in"
+    TRADES ||--o{ TRADE_CARDS : "contains"
+    DECKS ||--o{ DECK_CARDS : "contains"
+    CARDS ||--o{ DECK_CARDS : "included in"
+
+
+```
+
+
+</details>
+
+### Relational Schemas:
+<details>
+  <summary>Click to expand section</summary>
+**USERS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| email           | VARCHAR   | Valid email addresses    | UNIQUE, NOT NULL               |
+| password_hash   | VARCHAR   | String (hashed)          | NOT NULL                       |
+| username        | VARCHAR   | Unique usernames         | UNIQUE, NOT NULL               |
+
+</details>
+
+---
+
+**COLLECTION**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| user_id         | INT       | Positive integers        | FK REFERENCES USERS(id)        |
+| card_id         | INT       | Positive integers        | FK REFERENCES CARDS(id)        |
+| quantity        | INT       | Non-negative integers     | NOT NULL                       |
+
+</details>
+
+---
+
+**CARDS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| name            | VARCHAR   | Valid card names         | NOT NULL                       |
+| mana_cost       | VARCHAR   | Valid mana cost values   |                                |
+| card_type       | VARCHAR   | Types (e.g., Creature)   |                                |
+| rarity          | VARCHAR   | Types (e.g., Rare)       |                                |
+| set_name             | VARCHAR   | Valid set names          |                                |
+| art_variation           | TEXT       | Valid arts of set editions      |                                |
+| image_url       | VARCHAR      | Valid image url      |                                |
+| rules_text      | TEXT      | Rules text for the card  |                                |
+
+</details>
+
+---
+
+**DECKS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| name            | VARCHAR   | Valid deck names         | NOT NULL                       |
+| created_at      | DATETIME  | Timestamp                | DEFAULT CURRENT_TIMESTAMP      |
+| format          | VARCHAR   | Format types (e.g., EDH) |                                |
+| user_id         | INT       | Positive integers        | FK REFERENCES USERS(id)        |
+| commander_card_id        | INT       | Positive integers        | FK REFERENCES Commander for a EDH Deck       |
+
+
+</details>
+
+---
+
+**DECK_CARDS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| deck_id         | INT       | Positive integers        | FK REFERENCES DECKS(id)       |
+| card_id         | INT       | Positive integers        | FK REFERENCES CARDS(id)       |
+| quantity        | INT       | Non-negative integers     | NOT NULL                       |
+
+</details>
+
+---
+
+**TRADES**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| user1_id        | INT       | Positive integers        | FK REFERENCES USERS(id)        |
+| user2_id        | INT       | Positive integers        | FK REFERENCES USERS(id)        |
+| status          | VARCHAR   | Trade statuses (e.g., completed) | NOT NULL              |
+| created_at      | DATETIME  | Timestamp                | DEFAULT CURRENT_TIMESTAMP      |
+| completed_at    | DATETIME  | Timestamp                |                                |
+
+</details>
+
+---
+
+**TRADE_CARDS**
+
+<details>
+  <summary>Click to expand table</summary>
+
+| Attribute       | Type      | Domain                   | Constraints                    |
+|-----------------|-----------|--------------------------|--------------------------------|
+| id              | INT       | Positive integers        | PK, Auto-increment             |
+| trade_id        | INT       | Positive integers        | FK REFERENCES TRADES(id)       |
+| card_id         | INT       | Positive integers        | FK REFERENCES CARDS(id)        |
+| user_id         | INT       | Positive integers        | FK REFERENCES USERS(id)        |
+| quantity        | INT       | Non-negative integers     | NOT NULL                       |
+| direction       | VARCHAR   | Direction types (e.g., give/take) | NOT NULL                  |
+
+</details>
+
+</details>
+
+### Web Interface Design
+
+# Tools and Technologies Used
+
+  * Frontend:
+  * Backend:
+
+# Features: 
+
+  ***1.*** Create: Add new cards to collections or decks.
+
+  ***2.*** Retrieve: Search and filter cards by name, type, or set.
+
+  ***3.*** Update: Modify deck configurations or card quantities.
+
+  ***4.*** Delete: Remove cards from collections or decks.
+
+# Screenshots and Descriptions
+
+***1.*** Home Page
+
+  * Description: Provides an overview of available features and user guides.
+
+  * Screenshot: 
+
+***2.*** Card Search Page
+
+  * Description: Advanced search options to filter cards by attributes.
+
+  * Screenshot: 
+
+***3.*** Trade Management Page
+
+  * Description: Interface to initiate, track, and complete trades.
+
+  * Screenshot: 
+
+***4.*** Reports Page
+
+  * Description: Provides 20 queries showcasing user collection statistics and trade history.
+
+  * Screenshot:
+
+### Sample Queries:
+
+Below are 20 sample queries our database can answer using relational algebra:
+
+<details>
+  <summary>Click to expand sample queries</summary>
+
+1. Retrieve all users.
+: $$ \pi_{id,email,username}(USERS) $$
+
+1. Get all cards in a specific collection.
+: $$ \pi_{card\_id,quantity}(COLLECTION ⋈_{user\_id} USERS) $$
+
+1. Get all decks owned by a user.
+: $$ \pi_{id,name}(DECKS ⋈_{user\_id} USERS) $$
+
+1. List all cards with a specific mana cost.
+: $$ \sigma_{mana\_cost}(CARDS) $$
+
+1. Find all cards by a specific artist.
+: $$ \sigma_{artist}(CARDS) $$
+
+1. Display the cards a user has from a specific set.
+: $$ \sigma_{set}(CARDS ⋈_{card\_id} COLLECTION ⋈_{user\_id} USERS) $$
+
+1. List all decks in a specific MTG format.
+: $$ \sigma_{format}(DECKS) $$
+
+1. List all cards in a user's collection.
+: $$ \pi_{card\_id}( COLLECTION ⋈_{user\_id} ​USERS ) $$
+
+1. List users that own a card in their collection that another user has in their collection.
+: $$ \pi_{username}(USERS ⋈_{user\_id} ​COLLECTION ⋈_{card\_id} COLLECTION ⋈_{user\_id} ​USERS) $$
+
+1. List a user's completed trade history (x is the user_id of desired user)
+: $$ \sigma_{status='completed'}(TRADES ⋈_{user1\_id='x' ∨ user2\_id='x'} ​USERS) $$
+
+1. Show all decks that include a specific card.
+: $$ \pi_{deck\_id}(DECK\_CARDS ⋈_{card\_id} CARDS) $$
+
+1. Find all cards in a user's collection with a specific artist
+: $$ \pi_{card\_id, artist}(CARDS ⋈_{card\_id} COLLECTION ⋈_{user\_id} USERS) $$
+
+1. List all users who have a card from a specific set.
+: $$ \pi_{username}(USERS ⋈_{user\_id} (COLLECTION ⋈_{card\_id} \sigma_{set}(CARDS) )) $$
+
+1. List all users who own decks.
+: $$ \pi_{username}(USERS ⋈_{user\_id} DECKS) $$
+
+1. Find history for users who have traded cards with each other.
+: $$ \pi_{user1_id,user2_id​}(TRADES) $$
+
+1. Find all users who have not traded any cards.
+: $$ \pi_{username}​(USERS)−\pi_{user1\_id}​(TRADES)−\pi_{user2\_id}​(TRADES) $$
+
+1. List all cards traded in a specific trade
+: $$ \pi_{card\_id}​(TRADE\_CARDS ⋈_{trade\_id} ​TRADES) $$
+
+1. Get all pending trades
+: $$ \sigma_{statis='pending'}(TRADES) $$
+
+1. Find all cards by a specific artist in a specific deck.
+: $$ \sigma_{artist}(CARDS ⋈_{card\_id} DECK\_CARDS ⋈_{deck\_id} DECKS) $$
+
+1. Get all cards that have been traded
+: $$ \pi_{card\_id}(TRADE\_CARDS) $$
+
+</details>
+
+---
+
+
+# Future Considerations
+
+If provided with additional time, we would:
+
+  ***1.*** Implement machine learning models for trade recommendations.
+
+  ***2.*** Enhance the user interface with real-time updates and visualizations.
+
+  ***3.*** Integrate additional APIs for fetching live card pricing.
+
+---
+
+# Reflections
+
+
+## Team Achievements
+
+We successfully implemented a functional MTG database with all CRUD operations and a user-friendly web interface. The collaborative effort allowed us to learn new technologies like PHP and ... , enhancing our skills.
+
+## Challenges and Solutions
+
+* Challenge: Handling large datasets for card attributes.
+
+  * Solution: Optimized database queries and indexing.
+
+* Challenge: Ensuring data security during user authentication.
+
+  * Solution: Adopted bcrypt hashing for passwords.
+
+# Final Thoughts
+
+Overall, this project was an invaluable learning experience. While there were hurdles, the final product demonstrates a robust solution to the identified problem.
